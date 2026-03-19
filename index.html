@@ -1,1 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seedling Journal</title>
+<style>
+
+  :root {
+    --sage: #7a9e7e;
+    --sage-light: #c8dbc9;
+    --sage-pale: #eef4ee;
+    --sage-dark: #3d5c40;
+    --cream: #faf7f2;
+    --cream-dark: #f0ebe0;
+    --soil: #7a5c3d;
+    --soil-light: #c4a882;
+    --petal: #d4849a;
+    --petal-light: #f5dde4;
+    --sky: #7fa8c4;
+    --sky-light: #dcedf7;
+    --amber: #c49a3c;
+    --amber-light: #f5e9c8;
+    --text: #2c3a2e;
+    --text-muted: #6b7f6e;
+    --border: rgba(122,158,126,0.25);
+    --shadow: rgba(61,92,64,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  /* Background botanical motif */
+  body::before {
+    content: '';
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background-image:
+      radial-gradient(ellipse at 10% 20%, rgba(200,219,201,0.3) 0%, transparent 50%),
+      radial-gradient(ellipse at 90% 80%, rgba(200,219,201,0.2) 0%, transparent 45%),
+      radial-gradient(ellipse at 50% 50%, rgba(250,247,242,0) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .app { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 0 16px 80px; }
+
+  /* Header */
+  header {
+    text-align: center;
+    padding: 40px 0 28px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 32px;
+  }
+  .header-leaf { font-size: 28px; display: block; margin-bottom: 8px; }
+  header h1 {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 2.2rem;
+    font-weight: 400;
+    color: var(--sage-dark);
+    letter-spacing: 0.01em;
+  }
+  header p { color: var(--text-muted); font-size: 0.9rem; margin-top: 6px; letter-spacing: 0.05em; font-weight: 300; }
+
+  /* Nav */
+  nav {
+    display: flex;
+    gap: 6px;
+    background: var(--cream-dark);
+    border-radius: 50px;
+    padding: 5px;
+    margin-bottom: 28px;
+    border: 1px solid var(--border);
+  }
+  nav button {
+    flex: 1; border: none; background: none; cursor: pointer;
+    padding: 9px 12px; border-radius: 50px;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 0.82rem; font-weight: 400;
+    color: var(--text-muted); letter-spacing: 0.03em;
+    transition: all 0.2s;
+  }
+  nav button.active {
+    background: white; color: var(--sage-dark);
+    font-weight: 500;
+    box-shadow: 0 1px 4px var(--shadow);
+  }
+
+  /* Section */
+  .section { display: none; }
+  .section.visible { display: block; }
+
+  /* Stats bar */
+  .stats-bar {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 10px; margin-bottom: 24px;
+  }
+  .stat-card {
+    background: white; border-radius: 14px;
+    padding: 14px 12px; text-align: center;
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 6px var(--shadow);
+  }
+  .stat-card .val { font-family: Georgia, 'Times New Roman', serif; font-size: 1.6rem; color: var(--sage-dark); }
+  .stat-card .lbl { font-size: 0.72rem; color: var(--text-muted); letter-spacing: 0.04em; text-transform: uppercase; margin-top: 2px; }
+
+  /* Add plant btn */
+  .add-btn {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--sage-dark); color: white;
+    border: none; border-radius: 50px; padding: 11px 22px;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 0.88rem; font-weight: 500;
+    cursor: pointer; letter-spacing: 0.04em;
+    transition: background 0.2s, transform 0.1s;
+    margin-bottom: 20px;
+  }
+  .add-btn:hover { background: var(--sage); transform: translateY(-1px); }
+  .add-btn:active { transform: translateY(0); }
+
+  /* Filters */
+  .filters {
+    display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap;
+  }
+  .filter-btn {
+    border: 1px solid var(--border); background: white;
+    border-radius: 50px; padding: 6px 14px;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 0.8rem;
+    color: var(--text-muted); cursor: pointer;
+    transition: all 0.15s;
+  }
+  .filter-btn.active { background: var(--sage-pale); border-color: var(--sage); color: var(--sage-dark); }
+
+  /* Plant grid */
+  .plant-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+
+  /* Plant card */
+  .plant-card {
+    background: white; border-radius: 18px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    box-shadow: 0 2px 10px var(--shadow);
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+  }
+  .plant-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px var(--shadow); }
+  .card-img {
+    width: 100%; height: 140px; object-fit: cover;
+    background: var(--sage-pale);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 48px; color: var(--sage);
+  }
+  .card-img img { width: 100%; height: 100%; object-fit: cover; }
+  .card-img.no-img { font-size: 3rem; }
+  .card-body { padding: 14px 16px 16px; }
+  .card-name { font-family: Georgia, 'Times New Roman', serif; font-size: 1.1rem; font-weight: 500; color: var(--sage-dark); }
+  .card-variety { font-size: 0.8rem; color: var(--text-muted); font-style: italic; margin-top: 1px; }
+  .card-meta { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+  .badge {
+    font-size: 0.72rem; padding: 3px 9px; border-radius: 50px;
+    font-weight: 500; letter-spacing: 0.03em;
+  }
+  .badge-stage { background: var(--sage-pale); color: var(--sage-dark); }
+  .badge-water { background: var(--sky-light); color: #3a6e8c; }
+  .badge-warn { background: var(--amber-light); color: #7a5c0c; }
+  .badge-ok { background: #eef4ee; color: var(--sage-dark); }
+  .badge-sprout { background: var(--petal-light); color: #8c3a53; }
+  .card-days { font-size: 0.78rem; color: var(--text-muted); margin-top: 8px; }
+  .progress-bar { height: 4px; background: var(--cream-dark); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--sage-light), var(--sage)); border-radius: 2px; transition: width 0.5s; }
+  .card-actions { display: flex; gap: 6px; margin-top: 12px; }
+  .card-action {
+    flex: 1; border: 1px solid var(--border); background: none;
+    border-radius: 8px; padding: 7px 6px; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 0.75rem; color: var(--text-muted); cursor: pointer;
+    transition: all 0.15s; text-align: center;
+  }
+  .card-action:hover { background: var(--sage-pale); color: var(--sage-dark); border-color: var(--sage-light); }
+  .card-action.water-btn:hover { background: var(--sky-light); color: #3a6e8c; border-color: var(--sky); }
+
+  /* Water indicator */
+  .water-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    display: inline-block; margin-right: 4px;
+  }
+  .water-soon { background: var(--amber); }
+  .water-now { background: var(--petal); }
+  .water-ok { background: var(--sage); }
+
+  /* Modal */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(44,58,46,0.45); z-index: 100;
+    align-items: flex-start; justify-content: center;
+    padding: 20px 16px;
+    overflow-y: auto;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--cream); border-radius: 22px;
+    padding: 28px; width: 100%; max-width: 520px;
+    border: 1px solid var(--border);
+    box-shadow: 0 20px 60px rgba(61,92,64,0.2);
+    margin: auto;
+  }
+  .modal h2 { font-family: Georgia, 'Times New Roman', serif; font-size: 1.4rem; font-weight: 400; color: var(--sage-dark); margin-bottom: 20px; }
+  .form-row { margin-bottom: 16px; }
+  .form-row label { display: block; font-size: 0.8rem; color: var(--text-muted); letter-spacing: 0.04em; margin-bottom: 5px; text-transform: uppercase; }
+  .form-row input, .form-row select, .form-row textarea {
+    width: 100%; border: 1px solid var(--border);
+    background: white; border-radius: 10px; padding: 10px 12px;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 0.9rem; color: var(--text);
+    outline: none; transition: border-color 0.2s;
+    resize: vertical;
+  }
+  .form-row input:focus, .form-row select:focus, .form-row textarea:focus { border-color: var(--sage); }
+  .form-row textarea { min-height: 70px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .modal-btns { display: flex; gap: 10px; margin-top: 24px; }
+  .btn-save {
+    flex: 1; background: var(--sage-dark); color: white;
+    border: none; border-radius: 50px; padding: 12px;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 0.9rem; font-weight: 500;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .btn-save:hover { background: var(--sage); }
+  .btn-cancel {
+    border: 1px solid var(--border); background: none; color: var(--text-muted);
+    border-radius: 50px; padding: 12px 20px;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 0.9rem; cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-cancel:hover { background: var(--cream-dark); }
+
+  /* Detail modal */
+  .detail-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+  .detail-img { width: 100%; height: 180px; object-fit: cover; border-radius: 14px; background: var(--sage-pale); display: flex; align-items: center; justify-content: center; font-size: 4rem; margin-bottom: 16px; overflow: hidden; }
+  .detail-img img { width: 100%; height: 100%; object-fit: cover; }
+  .detail-section { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 14px; }
+  .detail-section h3 { font-family: Georgia, 'Times New Roman', serif; font-size: 1rem; font-weight: 400; color: var(--sage-dark); margin-bottom: 10px; }
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .info-item { background: white; border-radius: 10px; padding: 10px 12px; border: 1px solid var(--border); }
+  .info-item .key { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); }
+  .info-item .val { font-size: 0.95rem; font-weight: 500; color: var(--text); margin-top: 2px; }
+  .close-btn {
+    background: none; border: none; cursor: pointer;
+    font-size: 1.2rem; color: var(--text-muted); padding: 4px;
+    border-radius: 50%; transition: background 0.15s;
+    line-height: 1;
+  }
+  .close-btn:hover { background: var(--cream-dark); }
+
+  /* Log entries */
+  .log-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+  .log-entry {
+    background: white; border-radius: 10px; padding: 10px 12px;
+    border: 1px solid var(--border); font-size: 0.85rem;
+    display: flex; justify-content: space-between; align-items: flex-start;
+  }
+  .log-entry .log-text { color: var(--text); flex: 1; }
+  .log-entry .log-date { color: var(--text-muted); font-size: 0.75rem; white-space: nowrap; margin-left: 8px; }
+
+  /* Photo thumbnails */
+  .photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+  .photo-thumb {
+    aspect-ratio: 1; border-radius: 10px; overflow: hidden;
+    border: 1px solid var(--border); cursor: pointer;
+    position: relative; background: var(--sage-pale);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem;
+  }
+  .photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+  /* Reminders section */
+  .reminders-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .reminder-list { display: flex; flex-direction: column; gap: 10px; }
+  .reminder-card {
+    background: white; border-radius: 14px; padding: 14px 16px;
+    border: 1px solid var(--border); display: flex; align-items: center; gap: 14px;
+  }
+  .reminder-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+  .reminder-icon.water { background: var(--sky-light); }
+  .reminder-icon.fert { background: var(--amber-light); }
+  .reminder-icon.check { background: var(--sage-pale); }
+  .reminder-icon.trans { background: var(--petal-light); }
+  .reminder-body { flex: 1; }
+  .reminder-title { font-weight: 500; font-size: 0.9rem; color: var(--text); }
+  .reminder-sub { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
+  .reminder-time { font-size: 0.78rem; color: var(--text-muted); text-align: right; }
+  .reminder-urgent { border-color: var(--petal); background: var(--petal-light); }
+  .done-btn {
+    background: none; border: 1px solid var(--border); border-radius: 50px;
+    padding: 5px 12px; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 0.75rem;
+    color: var(--text-muted); cursor: pointer; transition: all 0.15s;
+  }
+  .done-btn:hover { background: var(--sage-pale); color: var(--sage-dark); border-color: var(--sage); }
+
+  /* Journal */
+  .journal-entry-form { background: white; border-radius: 16px; padding: 16px; border: 1px solid var(--border); margin-bottom: 20px; }
+  .journal-entries { display: flex; flex-direction: column; gap: 12px; }
+  .journal-card {
+    background: white; border-radius: 14px; padding: 16px;
+    border: 1px solid var(--border);
+  }
+  .journal-card .j-date { font-size: 0.75rem; color: var(--text-muted); letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 4px; }
+  .journal-card .j-plant { font-weight: 500; font-size: 0.85rem; color: var(--sage-dark); margin-bottom: 6px; }
+  .journal-card .j-text { font-size: 0.88rem; color: var(--text); line-height: 1.6; }
+
+  /* Frost countdown */
+  .frost-banner {
+    background: var(--sky-light); border: 1px solid rgba(127,168,196,0.4);
+    border-radius: 14px; padding: 14px 18px;
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 20px;
+  }
+  .frost-icon { font-size: 1.6rem; }
+  .frost-text .label { font-size: 0.78rem; color: #3a6e8c; text-transform: uppercase; letter-spacing: 0.04em; }
+  .frost-text .days { font-family: Georgia, 'Times New Roman', serif; font-size: 1.4rem; color: #3a6e8c; }
+  .frost-text .sub { font-size: 0.78rem; color: #3a6e8c; opacity: 0.8; margin-top: 1px; }
+  .frost-edit { margin-left: auto; background: none; border: 1px solid rgba(127,168,196,0.5); border-radius: 8px; padding: 6px 12px; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 0.78rem; color: #3a6e8c; cursor: pointer; }
+
+  /* Empty state */
+  .empty-state { text-align: center; padding: 60px 20px; }
+  .empty-state .e-icon { font-size: 3.5rem; display: block; margin-bottom: 14px; opacity: 0.6; }
+  .empty-state p { color: var(--text-muted); font-size: 0.9rem; }
+
+  /* Upload zone */
+  .upload-zone {
+    border: 2px dashed var(--sage-light); border-radius: 12px;
+    padding: 20px; text-align: center; cursor: pointer;
+    transition: background 0.2s; color: var(--text-muted); font-size: 0.85rem;
+    background: var(--sage-pale);
+  }
+  .upload-zone:hover { background: rgba(200,219,201,0.4); }
+  .upload-zone input { display: none; }
+
+  /* Stage select visual */
+  .stage-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 6px; }
+  .stage-opt {
+    border: 1px solid var(--border); border-radius: 10px; padding: 10px 6px;
+    text-align: center; cursor: pointer; font-size: 0.78rem; color: var(--text-muted);
+    transition: all 0.15s; background: white;
+  }
+  .stage-opt .s-icon { font-size: 1.4rem; display: block; margin-bottom: 4px; }
+  .stage-opt.selected { border-color: var(--sage); background: var(--sage-pale); color: var(--sage-dark); font-weight: 500; }
+
+  @media (max-width: 560px) {
+    .stats-bar { grid-template-columns: repeat(2, 1fr); }
+    .form-grid { grid-template-columns: 1fr; }
+    header h1 { font-size: 1.7rem; }
+    nav button { font-size: 0.72rem; padding: 8px 8px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="header-leaf">🌱</span>
+    <h1>Seedling Journal</h1>
+    <p>Track your garden from seed to harvest</p>
+  </header>
+
+  <nav>
+    <button class="active" onclick="showSection('garden')">Garden</button>
+    <button onclick="showSection('reminders')">Reminders</button>
+    <button onclick="showSection('journal')">Journal</button>
+    <button onclick="showSection('tips')">Care Tips</button>
+  </nav>
+
+  <!-- GARDEN SECTION -->
+  <div id="section-garden" class="section visible">
+    <div id="frost-banner" class="frost-banner">
+      <span class="frost-icon">❄️</span>
+      <div class="frost-text">
+        <div class="label">Last frost date</div>
+        <div class="days" id="frost-days">— days away</div>
+        <div class="sub" id="frost-sub">Set your last frost date</div>
+      </div>
+      <button class="frost-edit" onclick="editFrost()">Edit date</button>
+    </div>
+
+    <div class="stats-bar">
+      <div class="stat-card"><div class="val" id="stat-total">0</div><div class="lbl">Plants</div></div>
+      <div class="stat-card"><div class="val" id="stat-sprouted">0</div><div class="lbl">Sprouted</div></div>
+      <div class="stat-card"><div class="val" id="stat-water">0</div><div class="lbl">Need Water</div></div>
+      <div class="stat-card"><div class="val" id="stat-ready">0</div><div class="lbl">Transplant Ready</div></div>
+    </div>
+
+    <button class="add-btn" onclick="openAddModal()">+ Add New Seedling</button>
+
+    <div class="filters">
+      <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
+      <button class="filter-btn" onclick="setFilter('seeds', this)">Seeds</button>
+      <button class="filter-btn" onclick="setFilter('sprouted', this)">Sprouted</button>
+      <button class="filter-btn" onclick="setFilter('seedling', this)">Seedling</button>
+      <button class="filter-btn" onclick="setFilter('ready', this)">Ready to Transplant</button>
+    </div>
+
+    <div class="plant-grid" id="plant-grid"></div>
+    <div class="empty-state" id="empty-state" style="display:none">
+      <span class="e-icon">🪴</span>
+      <p>No seedlings yet — add your first one!</p>
+    </div>
+  </div>
+
+  <!-- REMINDERS SECTION -->
+  <div id="section-reminders" class="section">
+    <div class="reminders-header">
+      <h2 style="font-family:Georgia,'Times New Roman',serif;font-weight:400;color:var(--sage-dark);font-size:1.4rem">Today's Care</h2>
+    </div>
+    <div class="reminder-list" id="reminder-list"></div>
+    <div class="empty-state" id="reminder-empty" style="display:none">
+      <span class="e-icon">✅</span>
+      <p>All caught up! Your plants are happy.</p>
+    </div>
+  </div>
+
+  <!-- JOURNAL SECTION -->
+  <div id="section-journal" class="section">
+    <div class="journal-entry-form">
+      <div class="form-row" style="margin-bottom:10px">
+        <label>Plant</label>
+        <select id="j-plant"><option value="">Select a plant...</option></select>
+      </div>
+      <div class="form-row" style="margin-bottom:10px">
+        <label>Note</label>
+        <textarea id="j-text" placeholder="What did you observe today? Any new growth, pest issues, or milestones..." style="min-height:70px"></textarea>
+      </div>
+      <button class="btn-save" style="width:100%" onclick="addJournalEntry()">Save Entry</button>
+    </div>
+    <div class="journal-entries" id="journal-entries"></div>
+    <div class="empty-state" id="journal-empty" style="display:none">
+      <span class="e-icon">📓</span>
+      <p>Your garden journal is waiting for its first entry.</p>
+    </div>
+  </div>
+
+  <!-- TIPS SECTION -->
+  <div id="section-tips" class="section">
+    <h2 style="font-family:Georgia,'Times New Roman',serif;font-weight:400;color:var(--sage-dark);font-size:1.4rem;margin-bottom:18px">Seed Starting Tips</h2>
+    <div id="tips-list"></div>
+  </div>
+</div>
+
+<!-- ADD/EDIT MODAL -->
+<div class="modal-overlay" id="add-modal">
+  <div class="modal">
+    <h2 id="modal-title">New Seedling</h2>
+    <div class="form-grid">
+      <div class="form-row"><label>Plant Name</label><input id="f-name" placeholder="e.g. Tomato"></div>
+      <div class="form-row"><label>Variety</label><input id="f-variety" placeholder="e.g. Cherry, Brandywine"></div>
+    </div>
+    <div class="form-row">
+      <label>Stage</label>
+      <div class="stage-grid" id="stage-select">
+        <div class="stage-opt selected" data-stage="seeds" onclick="selectStage(this)"><span class="s-icon">🌰</span>Seeds</div>
+        <div class="stage-opt" data-stage="sprouted" onclick="selectStage(this)"><span class="s-icon">🌱</span>Sprouted</div>
+        <div class="stage-opt" data-stage="seedling" onclick="selectStage(this)"><span class="s-icon">🌿</span>Seedling</div>
+        <div class="stage-opt" data-stage="ready" onclick="selectStage(this)"><span class="s-icon">🪴</span>Ready</div>
+        <div class="stage-opt" data-stage="transplanted" onclick="selectStage(this)"><span class="s-icon">🌳</span>Transplanted</div>
+        <div class="stage-opt" data-stage="harvested" onclick="selectStage(this)"><span class="s-icon">🥬</span>Harvested</div>
+      </div>
+    </div>
+    <div class="form-grid">
+      <div class="form-row"><label>Date Started</label><input id="f-date" type="date"></div>
+      <div class="form-row"><label>Water Every (days)</label><input id="f-water" type="number" placeholder="2" min="1" max="14" value="2"></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-row"><label>Light Needs</label>
+        <select id="f-light">
+          <option>Full sun</option>
+          <option>Partial shade</option>
+          <option>Full shade</option>
+          <option>Indirect light</option>
+        </select>
+      </div>
+      <div class="form-row"><label>Days to Transplant</label><input id="f-days" type="number" placeholder="42" min="1" max="120"></div>
+    </div>
+    <div class="form-row"><label>Location / Container</label><input id="f-loc" placeholder="e.g. South window, Tray 2"></div>
+    <div class="form-row"><label>Notes</label><textarea id="f-notes" placeholder="Any special care notes..."></textarea></div>
+    <div class="form-row">
+      <label>Photo</label>
+      <div class="upload-zone" onclick="document.getElementById('f-photo').click()">
+        <input type="file" id="f-photo" accept="image/*" onchange="previewPhoto(event)">
+        <div id="photo-preview-wrap">📷 Tap to add a photo</div>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal('add-modal')">Cancel</button>
+      <button class="btn-save" onclick="savePlant()">Save Seedling</button>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay" id="detail-modal">
+  <div class="modal">
+    <div class="detail-header">
+      <h2 id="d-name" style="font-family:Georgia,'Times New Roman',serif;font-weight:400;color:var(--sage-dark);font-size:1.4rem"></h2>
+      <button class="close-btn" onclick="closeModal('detail-modal')">✕</button>
+    </div>
+    <div class="detail-img" id="d-img"></div>
+    <div class="info-grid" id="d-info"></div>
+    <div class="detail-section">
+      <h3>Growth Photos</h3>
+      <div class="photo-grid" id="d-photos">
+        <div class="photo-thumb" onclick="document.getElementById('add-photo-input').click()" style="border:2px dashed var(--sage-light);font-size:1.2rem;color:var(--sage)">
+          +<br><span style="font-size:0.65rem;color:var(--text-muted)">Add photo</span>
+        </div>
+        <input type="file" id="add-photo-input" accept="image/*" style="display:none" onchange="addPhotoToPlant(event)">
+      </div>
+    </div>
+    <div class="detail-section">
+      <h3>Care Log</h3>
+      <div class="log-list" id="d-log"></div>
+    </div>
+    <div class="detail-section">
+      <div class="modal-btns" style="margin-top:12px">
+        <button class="btn-cancel" onclick="waterPlant()">💧 Log Watering</button>
+        <button class="btn-save" onclick="editCurrentPlant()">Edit</button>
+      </div>
+      <button style="margin-top:10px;width:100%;border:none;background:none;color:var(--petal);font-family:'Segoe UI',system-ui,sans-serif;font-size:0.85rem;cursor:pointer;padding:8px" onclick="deletePlant()">Remove plant</button>
+    </div>
+  </div>
+</div>
+
+<!-- FROST MODAL -->
+<div class="modal-overlay" id="frost-modal">
+  <div class="modal">
+    <h2>Last Frost Date</h2>
+    <div class="form-row">
+      <label>Your Last Frost Date</label>
+      <input type="date" id="frost-date-input">
+    </div>
+    <p style="font-size:0.82rem;color:var(--text-muted);line-height:1.6;margin-top:4px">This is the last date you expect frost in your area. Seedlings should be hardened off and transplanted after this date.</p>
+    <div class="modal-btns" style="margin-top:20px">
+      <button class="btn-cancel" onclick="closeModal('frost-modal')">Cancel</button>
+      <button class="btn-save" onclick="saveFrost()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const TIPS = [
+  { icon: '💧', title: 'Watering', text: 'Water seedlings from the bottom by setting trays in water for 10–15 minutes. This encourages deep root growth and prevents damping off.' },
+  { icon: '☀️', title: 'Light', text: 'Most seedlings need 14–16 hours of light per day. A south-facing window or grow lights kept 2–3 inches above seedlings works best.' },
+  { icon: '🌡️', title: 'Temperature', text: 'Most seeds germinate best at 65–75°F (18–24°C). A heat mat can speed germination by keeping soil consistently warm.' },
+  { icon: '✂️', title: 'Thinning', text: 'When seedlings have their first true leaves, thin to one plant per cell by snipping (not pulling) extras at the soil line.' },
+  { icon: '🌬️', title: 'Air circulation', text: 'A gentle fan for a few hours daily strengthens stems and reduces fungal issues. Brush seedlings lightly daily to simulate wind.' },
+  { icon: '🪴', title: 'Hardening off', text: 'Starting 1–2 weeks before transplanting, gradually expose seedlings to outdoor conditions. Start with 1 hour of shade and increase daily.' },
+  { icon: '🌿', title: 'Fertilizing', text: 'Begin fertilizing with diluted liquid fertilizer once seedlings have their first true leaves. Use half the recommended dose.' },
+  { icon: '🌱', title: 'Soil mix', text: 'Use a seed-starting mix, not garden soil. It\'s finer, lighter, and drains well. Garden soil is too dense and may carry pathogens.' },
+];
+
+let plants = JSON.parse(localStorage.getItem('sg_plants') || '[]');
+let journal = JSON.parse(localStorage.getItem('sg_journal') || '[]');
+let frostDate = localStorage.getItem('sg_frost') || '';
+let editingId = null;
+let viewingId = null;
+let selectedStage = 'seeds';
+let pendingPhoto = null;
+
+function save() {
+  localStorage.setItem('sg_plants', JSON.stringify(plants));
+  localStorage.setItem('sg_journal', JSON.stringify(journal));
+}
+
+function uid() { return Date.now() + Math.random().toString(36).slice(2); }
+
+function today() { return new Date().toISOString().slice(0, 10); }
+
+function daysSince(d) {
+  if (!d) return 0;
+  return Math.floor((Date.now() - new Date(d)) / 86400000);
+}
+
+function needsWater(plant) {
+  if (!plant.lastWatered) return true;
+  return daysSince(plant.lastWatered) >= (plant.waterEvery || 2);
+}
+
+function waterSoon(plant) {
+  if (!plant.lastWatered) return false;
+  const d = daysSince(plant.lastWatered);
+  const threshold = plant.waterEvery || 2;
+  return d >= threshold - 1 && d < threshold;
+}
+
+function transplantReady(plant) {
+  if (!plant.daysToTransplant || !plant.startDate) return false;
+  return daysSince(plant.startDate) >= plant.daysToTransplant;
+}
+
+const stageEmoji = { seeds: '🌰', sprouted: '🌱', seedling: '🌿', ready: '🪴', transplanted: '🌳', harvested: '🥬' };
+const stageLabel = { seeds: 'Seeds', sprouted: 'Sprouted', seedling: 'Seedling', ready: 'Ready', transplanted: 'Transplanted', harvested: 'Harvested' };
+
+function renderGarden(filter = 'all') {
+  const grid = document.getElementById('plant-grid');
+  const empty = document.getElementById('empty-state');
+  let list = [...plants];
+  if (filter !== 'all') list = list.filter(p => p.stage === filter);
+
+  document.getElementById('stat-total').textContent = plants.length;
+  document.getElementById('stat-sprouted').textContent = plants.filter(p => p.stage !== 'seeds').length;
+  document.getElementById('stat-water').textContent = plants.filter(needsWater).length;
+  document.getElementById('stat-ready').textContent = plants.filter(transplantReady).length;
+
+  if (list.length === 0) { grid.innerHTML = ''; empty.style.display = ''; return; }
+  empty.style.display = 'none';
+
+  grid.innerHTML = list.map(p => {
+    const days = daysSince(p.startDate);
+    const progress = p.daysToTransplant ? Math.min(100, Math.round(days / p.daysToTransplant * 100)) : 0;
+    const water = needsWater(p);
+    const wSoon = waterSoon(p);
+    const ready = transplantReady(p);
+    const imgHtml = p.photos && p.photos.length > 0
+      ? `<div class="card-img"><img src="${p.photos[p.photos.length - 1]}" alt="${p.name}"></div>`
+      : `<div class="card-img no-img">${stageEmoji[p.stage] || '🌱'}</div>`;
+    return `<div class="plant-card" onclick="openDetail('${p.id}')">
+      ${imgHtml}
+      <div class="card-body">
+        <div class="card-name">${p.name}</div>
+        ${p.variety ? `<div class="card-variety">${p.variety}</div>` : ''}
+        <div class="card-meta">
+          <span class="badge badge-stage">${stageLabel[p.stage] || p.stage}</span>
+          ${water ? `<span class="badge badge-water">💧 Water now</span>` : wSoon ? `<span class="badge badge-warn">💧 Soon</span>` : `<span class="badge badge-ok">💧 Good</span>`}
+          ${ready ? `<span class="badge badge-sprout">🪴 Transplant!</span>` : ''}
+        </div>
+        ${p.startDate ? `<div class="card-days">Day ${days} ${p.daysToTransplant ? `· ${Math.max(0, p.daysToTransplant - days)} days to transplant` : ''}</div>` : ''}
+        ${p.daysToTransplant ? `<div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>` : ''}
+        <div class="card-actions" onclick="event.stopPropagation()">
+          <button class="card-action water-btn" onclick="quickWater('${p.id}')">💧 Water</button>
+          <button class="card-action" onclick="openDetail('${p.id}')">View</button>
+          <button class="card-action" onclick="openEdit('${p.id}')">Edit</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderReminders() {
+  const list = document.getElementById('reminder-list');
+  const empty = document.getElementById('reminder-empty');
+  const reminders = [];
+  plants.forEach(p => {
+    if (needsWater(p)) reminders.push({ type: 'water', plant: p, urgent: true, text: `Water ${p.name}`, sub: p.lastWatered ? `Last watered ${daysSince(p.lastWatered)} day(s) ago` : 'Never watered' });
+    else if (waterSoon(p)) reminders.push({ type: 'water', plant: p, urgent: false, text: `Water ${p.name} soon`, sub: `Water tomorrow or the day after` });
+    if (transplantReady(p)) reminders.push({ type: 'trans', plant: p, urgent: true, text: `Transplant ${p.name}`, sub: `Day ${daysSince(p.startDate)} — ready to go outside!` });
+  });
+  if (reminders.length === 0) { list.innerHTML = ''; empty.style.display = ''; return; }
+  empty.style.display = 'none';
+  const icons = { water: '💧', fert: '🌿', check: '👀', trans: '🪴' };
+  list.innerHTML = reminders.map((r, i) => `
+    <div class="reminder-card ${r.urgent ? 'reminder-urgent' : ''}">
+      <div class="reminder-icon ${r.type === 'water' ? 'water' : r.type === 'trans' ? 'trans' : 'check'}">${icons[r.type] || '🌱'}</div>
+      <div class="reminder-body">
+        <div class="reminder-title">${r.text}</div>
+        <div class="reminder-sub">${r.sub}</div>
+      </div>
+      ${r.type === 'water' ? `<button class="done-btn" onclick="quickWater('${r.plant.id}');renderReminders()">Done ✓</button>` : ''}
+    </div>`).join('');
+}
+
+function renderJournal() {
+  const sel = document.getElementById('j-plant');
+  sel.innerHTML = '<option value="">Select a plant...</option>' + plants.map(p => `<option value="${p.id}">${p.name}${p.variety ? ' — ' + p.variety : ''}</option>`).join('');
+  const container = document.getElementById('journal-entries');
+  const empty = document.getElementById('journal-empty');
+  if (journal.length === 0) { container.innerHTML = ''; empty.style.display = ''; return; }
+  empty.style.display = 'none';
+  const sorted = [...journal].reverse();
+  container.innerHTML = sorted.map(e => {
+    const plant = plants.find(p => p.id === e.plantId);
+    return `<div class="journal-card">
+      <div class="j-date">${new Date(e.date).toLocaleDateString('en-US', { weekday:'short', month:'long', day:'numeric' })}</div>
+      ${plant ? `<div class="j-plant">${plant.name}${plant.variety ? ' · ' + plant.variety : ''}</div>` : ''}
+      <div class="j-text">${e.text}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderTips() {
+  document.getElementById('tips-list').innerHTML = TIPS.map(t => `
+    <div style="background:white;border-radius:14px;padding:16px;border:1px solid var(--border);margin-bottom:12px;display:flex;gap:14px;align-items:flex-start">
+      <span style="font-size:1.5rem;flex-shrink:0">${t.icon}</span>
+      <div><div style="font-weight:500;color:var(--sage-dark);margin-bottom:4px;font-size:0.95rem">${t.title}</div><div style="font-size:0.85rem;color:var(--text-muted);line-height:1.6">${t.text}</div></div>
+    </div>`).join('');
+}
+
+function updateFrostBanner() {
+  if (!frostDate) return;
+  const days = Math.ceil((new Date(frostDate) - Date.now()) / 86400000);
+  const el = document.getElementById('frost-days');
+  const sub = document.getElementById('frost-sub');
+  if (days > 0) { el.textContent = `${days} days away`; sub.textContent = `Last frost: ${new Date(frostDate).toLocaleDateString('en-US',{month:'long',day:'numeric'})}`; }
+  else { el.textContent = 'Passed!'; sub.textContent = 'Safe to transplant outdoors'; }
+}
+
+// Filter
+let activeFilter = 'all';
+function setFilter(f, btn) {
+  activeFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderGarden(f);
+}
+
+// Sections
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('visible'));
+  document.getElementById('section-' + id).classList.add('visible');
+  document.querySelectorAll('nav button').forEach((b, i) => {
+    b.classList.toggle('active', ['garden','reminders','journal','tips'][i] === id);
+  });
+  if (id === 'reminders') renderReminders();
+  if (id === 'journal') renderJournal();
+  if (id === 'tips') renderTips();
+}
+
+// Stage select
+function selectStage(el) {
+  document.querySelectorAll('.stage-opt').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedStage = el.dataset.stage;
+}
+
+// Modal helpers
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// Add modal
+function openAddModal() {
+  editingId = null; pendingPhoto = null;
+  document.getElementById('modal-title').textContent = 'New Seedling';
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-variety').value = '';
+  document.getElementById('f-date').value = today();
+  document.getElementById('f-water').value = 2;
+  document.getElementById('f-loc').value = '';
+  document.getElementById('f-notes').value = '';
+  document.getElementById('f-days').value = '';
+  document.getElementById('f-light').value = 'Full sun';
+  document.getElementById('photo-preview-wrap').innerHTML = '📷 Tap to add a photo';
+  selectStage(document.querySelector('.stage-opt[data-stage="seeds"]'));
+  openModal('add-modal');
+}
+
+function openEdit(id) {
+  const p = plants.find(x => x.id === id);
+  if (!p) return;
+  editingId = id; pendingPhoto = null;
+  document.getElementById('modal-title').textContent = 'Edit Seedling';
+  document.getElementById('f-name').value = p.name;
+  document.getElementById('f-variety').value = p.variety || '';
+  document.getElementById('f-date').value = p.startDate || '';
+  document.getElementById('f-water').value = p.waterEvery || 2;
+  document.getElementById('f-loc').value = p.location || '';
+  document.getElementById('f-notes').value = p.notes || '';
+  document.getElementById('f-days').value = p.daysToTransplant || '';
+  document.getElementById('f-light').value = p.light || 'Full sun';
+  document.getElementById('photo-preview-wrap').innerHTML = p.photos && p.photos.length ? `<img src="${p.photos[p.photos.length-1]}" style="max-height:100px;border-radius:8px">` : '📷 Tap to add a photo';
+  const stageEl = document.querySelector(`.stage-opt[data-stage="${p.stage}"]`);
+  if (stageEl) selectStage(stageEl);
+  closeModal('detail-modal');
+  openModal('add-modal');
+}
+
+function editCurrentPlant() { if (viewingId) openEdit(viewingId); }
+
+function previewPhoto(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    pendingPhoto = ev.target.result;
+    document.getElementById('photo-preview-wrap').innerHTML = `<img src="${pendingPhoto}" style="max-height:100px;border-radius:8px">`;
+  };
+  reader.readAsDataURL(file);
+}
+
+function savePlant() {
+  const name = document.getElementById('f-name').value.trim();
+  if (!name) { alert('Please enter a plant name.'); return; }
+  if (editingId) {
+    const p = plants.find(x => x.id === editingId);
+    p.name = name;
+    p.variety = document.getElementById('f-variety').value.trim();
+    p.stage = selectedStage;
+    p.startDate = document.getElementById('f-date').value;
+    p.waterEvery = parseInt(document.getElementById('f-water').value) || 2;
+    p.location = document.getElementById('f-loc').value.trim();
+    p.notes = document.getElementById('f-notes').value.trim();
+    p.daysToTransplant = parseInt(document.getElementById('f-days').value) || null;
+    p.light = document.getElementById('f-light').value;
+    if (pendingPhoto) { p.photos = p.photos || []; p.photos.push(pendingPhoto); }
+  } else {
+    const plant = {
+      id: uid(), name,
+      variety: document.getElementById('f-variety').value.trim(),
+      stage: selectedStage,
+      startDate: document.getElementById('f-date').value,
+      waterEvery: parseInt(document.getElementById('f-water').value) || 2,
+      location: document.getElementById('f-loc').value.trim(),
+      notes: document.getElementById('f-notes').value.trim(),
+      daysToTransplant: parseInt(document.getElementById('f-days').value) || null,
+      light: document.getElementById('f-light').value,
+      lastWatered: null,
+      photos: pendingPhoto ? [pendingPhoto] : [],
+      log: []
+    };
+    plants.push(plant);
+  }
+  save(); closeModal('add-modal'); renderGarden(activeFilter);
+}
+
+function deletePlant() {
+  if (!viewingId || !confirm('Remove this plant from your garden?')) return;
+  plants = plants.filter(p => p.id !== viewingId);
+  journal = journal.filter(e => e.plantId !== viewingId);
+  save(); closeModal('detail-modal'); renderGarden(activeFilter);
+}
+
+function openDetail(id) {
+  const p = plants.find(x => x.id === id);
+  if (!p) return;
+  viewingId = id;
+  document.getElementById('d-name').textContent = p.name + (p.variety ? ` · ${p.variety}` : '');
+  const imgWrap = document.getElementById('d-img');
+  if (p.photos && p.photos.length > 0) {
+    imgWrap.innerHTML = `<img src="${p.photos[p.photos.length-1]}" style="width:100%;height:100%;object-fit:cover">`;
+  } else {
+    imgWrap.innerHTML = stageEmoji[p.stage] || '🌱';
+  }
+  const info = [
+    { key: 'Stage', val: stageLabel[p.stage] || p.stage },
+    { key: 'Started', val: p.startDate ? new Date(p.startDate).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—' },
+    { key: 'Days old', val: p.startDate ? daysSince(p.startDate) : '—' },
+    { key: 'Water every', val: `${p.waterEvery || 2} day(s)` },
+    { key: 'Light', val: p.light || '—' },
+    { key: 'Location', val: p.location || '—' },
+    { key: 'Last watered', val: p.lastWatered ? `${daysSince(p.lastWatered)}d ago` : 'Never' },
+    { key: 'Transplant in', val: p.daysToTransplant && p.startDate ? `${Math.max(0, p.daysToTransplant - daysSince(p.startDate))} days` : '—' },
+  ];
+  document.getElementById('d-info').innerHTML = info.map(i => `<div class="info-item"><div class="key">${i.key}</div><div class="val">${i.val}</div></div>`).join('');
+
+  const photos = document.getElementById('d-photos');
+  const thumbs = (p.photos || []).map(src => `<div class="photo-thumb"><img src="${src}"></div>`).join('');
+  photos.innerHTML = thumbs + `<div class="photo-thumb" onclick="document.getElementById('add-photo-input').click()" style="border:2px dashed var(--sage-light);font-size:1.2rem;color:var(--sage);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2px">+<span style="font-size:0.65rem;color:var(--text-muted)">Add</span></div>
+    <input type="file" id="add-photo-input" accept="image/*" style="display:none" onchange="addPhotoToPlant(event)">`;
+
+  const logEl = document.getElementById('d-log');
+  const entries = [...(p.log || [])].reverse();
+  logEl.innerHTML = entries.length ? entries.map(e => `<div class="log-entry"><div class="log-text">${e.text}</div><div class="log-date">${new Date(e.date).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div></div>`).join('') : '<div style="font-size:0.82rem;color:var(--text-muted)">No entries yet.</div>';
+
+  openModal('detail-modal');
+}
+
+function waterPlant() {
+  const p = plants.find(x => x.id === viewingId);
+  if (!p) return;
+  p.lastWatered = today();
+  p.log = p.log || [];
+  p.log.push({ date: new Date().toISOString(), text: '💧 Watered' });
+  save(); openDetail(viewingId); renderGarden(activeFilter);
+}
+
+function quickWater(id) {
+  const p = plants.find(x => x.id === id);
+  if (!p) return;
+  p.lastWatered = today();
+  p.log = p.log || [];
+  p.log.push({ date: new Date().toISOString(), text: '💧 Watered' });
+  save(); renderGarden(activeFilter);
+}
+
+function addPhotoToPlant(e) {
+  const file = e.target.files[0];
+  const p = plants.find(x => x.id === viewingId);
+  if (!file || !p) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    p.photos = p.photos || [];
+    p.photos.push(ev.target.result);
+    save(); openDetail(viewingId); renderGarden(activeFilter);
+  };
+  reader.readAsDataURL(file);
+}
+
+function addJournalEntry() {
+  const plantId = document.getElementById('j-plant').value;
+  const text = document.getElementById('j-text').value.trim();
+  if (!text) { alert('Please write something!'); return; }
+  journal.push({ id: uid(), plantId, date: new Date().toISOString(), text });
+  document.getElementById('j-text').value = '';
+  save(); renderJournal();
+}
+
+function editFrost() {
+  document.getElementById('frost-date-input').value = frostDate;
+  openModal('frost-modal');
+}
+function saveFrost() {
+  frostDate = document.getElementById('frost-date-input').value;
+  localStorage.setItem('sg_frost', frostDate);
+  updateFrostBanner(); closeModal('frost-modal');
+}
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); }));
+
+// Init
+renderGarden();
+updateFrostBanner();
+renderTips();
+</script>
+</body>
+</html>
 
