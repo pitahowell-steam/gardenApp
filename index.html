@@ -719,7 +719,7 @@ function showSection(id) {
 
 // Stage select
 function selectStage(el) {
-  document.querySelectorAll('.stage-opt').forEach(o => o.classList.remove('selected'));
+  document.querySelectorAll('#stage-select .stage-opt').forEach(o => o.classList.remove('selected'));
   el.classList.add('selected');
   selectedStage = el.dataset.stage;
 }
@@ -741,7 +741,9 @@ function openAddModal() {
   document.getElementById('f-days').value = '';
   document.getElementById('f-light').value = 'Full sun';
   document.getElementById('photo-preview-wrap').innerHTML = '📷 Tap to add a photo';
-  selectStage(document.querySelector('.stage-opt[data-stage="seeds"]'));
+  document.getElementById('f-photo').value = '';
+  selectedStage = 'seeds';
+  selectStage(document.querySelector('#stage-select .stage-opt[data-stage="seeds"]'));
   openModal('add-modal');
 }
 
@@ -759,7 +761,7 @@ function openEdit(id) {
   document.getElementById('f-days').value = p.daysToTransplant || '';
   document.getElementById('f-light').value = p.light || 'Full sun';
   document.getElementById('photo-preview-wrap').innerHTML = p.photos && p.photos.length ? `<img src="${p.photos[p.photos.length-1]}" style="max-height:100px;border-radius:8px">` : '📷 Tap to add a photo';
-  const stageEl = document.querySelector(`.stage-opt[data-stage="${p.stage}"]`);
+  const stageEl = document.querySelector(`#stage-select .stage-opt[data-stage="${p.stage}"]`);
   if (stageEl) selectStage(stageEl);
   closeModal('detail-modal');
   openModal('add-modal');
@@ -915,4 +917,5 @@ renderTips();
 </script>
 </body>
 </html>
+
 
